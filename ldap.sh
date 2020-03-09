@@ -66,7 +66,9 @@ rsync --inplace -av -e "ssh -i $SSHPrivateKey" \
 
 # Start the container
 ssh -i $SSHPrivateKey $RemoteUser@$DockerHost <<EOF
+  set -x
   docker run -d --name ldap -e SERVICE_NAME=ldap \
+      -u \$(id -u) \
       -v ~/ldap/init/:/docker-entrypoint-init \
       -v ~/ldap/data:/var/lib/ldap \
       openldap:latest
