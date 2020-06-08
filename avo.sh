@@ -65,5 +65,7 @@ cat $dump | ssh -i $SSHPrivateKey $RemoteUser@$DockerHost \
 
 db="mediamosa"
 startdb $db 3307
-cat $(mostrecentbackup $db) | ssh -i $SSHPrivateKey $RemoteUser@$DockerHost \
+dump=$(mostrecentbackup $db)
+echo "Recovering $dump"
+cat $dump | ssh -i $SSHPrivateKey $RemoteUser@$DockerHost \
 "(echo 'create database $db;use $db;'; gunzip ) >init-$db/00-$db.sql"
