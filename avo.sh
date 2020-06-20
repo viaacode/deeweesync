@@ -62,6 +62,16 @@ dump=$(mostrecentbackup $db)
 echo "Recovering $dump"
 cat $dump | ssh -i $SSHPrivateKey $RemoteUser@$DockerHost \
 "(echo 'create database $db; use $db;'; gunzip | sed -r 's/^(\) ENGINE=)InnoDB /\1MyISAM /') >init-$db/00-$db.sql"
+if [ $? -eq 0  ]; then
+  TIMESTAMP=$(stat -c '%y' $dump)
+  ssh -i $SSHPrivateKey $RemoteUser@$DockerHost <<EOF
+     echo "insert into syncs (service, time) \
+         values ('${db/_/-}', '$TIMESTAMP') \
+         on conflict on constraint syncs_pkey do update set time = \
+         '$TIMESTAMP' where syncs.service = '${db/_/-}' ;" \
+         | docker exec -i tldb psql -qt -U postgres syncstatus 2>&1
+EOF
+fi
 
 db="mediamosa"
 startdb $db 3307
@@ -69,3 +79,13 @@ dump=$(mostrecentbackup $db)
 echo "Recovering $dump"
 cat $dump | ssh -i $SSHPrivateKey $RemoteUser@$DockerHost \
 "(echo 'create database $db;use $db;'; gunzip ) >init-$db/00-$db.sql"
+if [ $? -eq 0  ]; then
+  TIMESTAMP=$(stat -c '%y' $dump)
+  ssh -i $SSHPrivateKey $RemoteUser@$DockerHost <<EOF
+     echo "insert into syncs (service, time) \
+         values ('${db/_/-}', '$TIMESTAMP') \
+         on conflict on constraint syncs_pkey do update set time = \
+         '$TIMESTAMP' where syncs.service = '${db/_/-}' ;" \
+         | docker exec -i tldb psql -qt -U postgres syncstatus 2>&1
+EOF
+fi
